@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - Vehicle Parking System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-history"></i> My Parking Bookings</h2>
+    <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Booking History ({{ bookings|length }} bookings)</h5>
+    </div>
+    <div class="card-body">
+        {% if bookings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Vehicle Number</th>
+                        <th>Location</th>
+                        <th>Spot</th>
+                        <th>Parking Time</th>
+                        <th>Leaving Time</th>
+                        <th>Duration</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>#{{ booking.id }}</td>
+                        <td><strong>{{ booking.vehicle_number }}</strong></td>
+                        <td>{{ booking.parking_spot.parking_lot.prime_location_name }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ booking.parking_spot.spot_number }}</span>
+                        </td>
+                        <td>{{ booking.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                {{ booking.leaving_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="text-muted">Still parked</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                {{ booking.duration_hours }} hours
+                            {% else %}
+                                <span class="text-muted">Ongoing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                <strong>₹{{ booking.parking_cost }}</strong>
+                            {% else %}
+                                <span class="text-muted">TBD</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Active</span>
+                                <br>
+                                <a href="{{ url_for('release_parking', reservation_id=booking.id) }}" 
+                                   class="btn btn-sm btn-outline-warning mt-1"
+                                   onclick="return confirm('Release this parking spot?')">
+                                    Release
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5>Total Bookings</h5>
+                        <h3 class="text-primary">{{ bookings|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5>Active Bookings</h5>
+                        <h3 class="text-warning">
+                            {{ bookings|selectattr('leaving_timestamp', 'none')|list|length }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5>Total Spent</h5>
+                        <h3 class="text-success">
+                            ₹{{ bookings|selectattr('leaving_timestamp', 'defined')|sum(attribute='parking_cost') }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+            <h5>No bookings yet</h5>
+            <p class="text-muted">Your parking bookings will appear here once you make a reservation.</p>
+            <a href="{{ url_for('user_dashboard') }}" class="btn btn-primary">Book Your First Parking</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

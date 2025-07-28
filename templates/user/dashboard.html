@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard - Vehicle Parking System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user"></i> User Dashboard</h2>
+    <a href="{{ url_for('my_bookings') }}" class="btn btn-info">
+        <i class="fas fa-history"></i> My Bookings
+    </a>
+</div>
+
+<!-- Active Reservation -->
+{% if active_reservation %}
+<div class="alert alert-info" role="alert">
+    <h5><i class="fas fa-car"></i> Active Parking</h5>
+    <p><strong>Vehicle:</strong> {{ active_reservation.vehicle_number }}</p>
+    <p><strong>Spot:</strong> {{ active_reservation.parking_spot.spot_number }} 
+       at {{ active_reservation.parking_spot.parking_lot.prime_location_name }}</p>
+    <p><strong>Parked Since:</strong> {{ active_reservation.parking_timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+    <a href="{{ url_for('release_parking', reservation_id=active_reservation.id) }}" 
+       class="btn btn-warning"
+       onclick="return confirm('Are you sure you want to release this parking spot?')">
+        <i class="fas fa-sign-out-alt"></i> Release Parking
+    </a>
+</div>
+{% endif %}
+
+<!-- Available Parking Lots -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-map-marker-alt"></i> Available Parking Lots</h5>
+    </div>
+    <div class="card-body">
+        {% if parking_lots %}
+        <div class="row">
+            {% for lot in parking_lots %}
+            <div class="col-md-6 mb-3">
+                <div class="card {% if lot.available_spots == 0 %}border-danger{% else %}border-success{% endif %}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ lot.prime_location_name }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">{{ lot.address }}</small><br>
+                            <strong>Price:</strong> ₹{{ lot.price_per_hour }}/hour<br>
+                            <strong>Available Spots:</strong> 
+                            <span class="badge {% if lot.available_spots > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ lot.available_spots }}/{{ lot.maximum_number_of_spots }}
+                            </span>
+                        </p>
+                        {% if lot.available_spots > 0 and not active_reservation %}
+                        <a href="{{ url_for('book_parking', lot_id=lot.id) }}" class="btn btn-primary">
+                            <i class="fas fa-car"></i> Book Parking
+                        </a>
+                        {% elif lot.available_spots == 0 %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-ban"></i> Full
+                        </button>
+                        {% elif active_reservation %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-info-circle"></i> Already Parked
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-parking fa-3x text-muted mb-3"></i>
+            <h5>No parking lots available</h5>
+            <p class="text-muted">Please check back later.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Bookings -->
+{% if past_bookings %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-history"></i> Recent Bookings</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Location</th>
+                        <th>Spot</th>
+                        <th>Parked</th>
+                        <th>Duration</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in past_bookings %}
+                    <tr>
+                        <td>{{ booking.vehicle_number }}</td>
+                        <td>{{ booking.parking_spot.parking_lot.prime_location_name }}</td>
+                        <td>{{ booking.parking_spot.spot_number }}</td>
+                        <td>{{ booking.parking_timestamp.strftime('%m/%d %H:%M') }}</td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                {{ booking.duration_hours }}h
+                            {% else %}
+                                <span class="badge bg-warning">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if booking.leaving_timestamp %}
+                                ₹{{ booking.parking_cost }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
